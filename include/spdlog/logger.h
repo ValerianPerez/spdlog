@@ -81,12 +81,20 @@ public:
               const std::array<Field, N> &fields,
               format_string_t<Args...> fmt,
               Args &&...args) {
-        log_(loc, lvl, fields, fmt, std::forward<Args>(args)...);
+        log_(loc, lvl, fields.data(), N, fmt, std::forward<Args>(args)...);
+    }
+    template <typename... Args, size_t N>
+    void slog(source_loc loc,
+              level::level_enum lvl,
+              const std::array<Field, 0> &fields,
+              format_string_t<Args...> fmt,
+              Args &&...args) {
+        log_(loc, lvl, nullptr, 0, fmt, std::forward<Args>(args)...);
     }
 
     template <typename... Args>
     void log(source_loc loc, level::level_enum lvl, format_string_t<Args...> fmt, Args &&...args) {
-        log_(loc, lvl, NO_FIELDS, fmt, std::forward<Args>(args)...);
+        log_(loc, lvl, nullptr, 0, fmt, std::forward<Args>(args)...);
     }
 
     template <typename... Args>
@@ -167,7 +175,7 @@ public:
 #ifdef SPDLOG_WCHAR_TO_UTF8_SUPPORT
     template <typename... Args>
     void log(source_loc loc, level::level_enum lvl, wformat_string_t<Args...> fmt, Args &&...args) {
-        log_(loc, lvl, NO_FIELDS, fmt, std::forward<Args>(args)...);
+        log_(loc, lvl, {}, fmt, std::forward<Args>(args)...);
     }
 
     template <typename... Args>
@@ -322,10 +330,11 @@ protected:
     details::backtracer tracer_;
 
     // common implementation for after templated public api has been resolved
-    template <typename... Args, size_t N>
+    template <typename... Args>
     void log_(source_loc loc,
               level::level_enum lvl,
-              const std::array<Field, N> &fields,
+              const Field *fields,
+              size_t num_fields,
               string_view_t fmt,
               Args &&...args) {
         bool log_enabled = should_log(lvl);
@@ -340,8 +349,8 @@ protected:
 #else
             fmt::vformat_to(fmt::appender(buf), fmt, fmt::make_format_args(args...));
 #endif
-            (void)fields;
-            details::log_msg log_msg(loc, name_, lvl, string_view_t(buf.data(), buf.size()));
+            details::log_msg log_msg(loc, name_, lvl, string_view_t(buf.data(), buf.size()), fields,
+                                     num_fields);
             log_it_(log_msg, log_enabled, traceback_enabled);
         }
         SPDLOG_LOGGER_CATCH(loc)
