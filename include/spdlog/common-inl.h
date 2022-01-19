@@ -65,4 +65,15 @@ SPDLOG_INLINE void throw_spdlog_ex(const std::string &msg, int last_errno) {
 
 SPDLOG_INLINE void throw_spdlog_ex(std::string msg) { SPDLOG_THROW(spdlog_ex(std::move(msg))); }
 
+#ifndef SPDLOG_NO_STRUCTURED_SPDLOG
+namespace details {
+
+SPDLOG_INLINE std::shared_ptr<context_data> &threadlocal_context_head() {
+    thread_local std::shared_ptr<context_data> context_head;
+    return context_head;
+}
+
+}  // namespace details
+#endif  // SPDLOG_NO_STRUCTURED_SPDLOG
+
 }  // namespace spdlog

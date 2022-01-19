@@ -461,7 +461,11 @@ struct Field {
           string_view_{val, N - 1} {}
 };
 using F = Field;
-constexpr auto NO_FIELDS = std::array<Field, 0>();
+
+namespace details {
+class context_data;
+SPDLOG_API std::shared_ptr<context_data> &threadlocal_context_head();
+}  // namespace details
 
 namespace details {
 
