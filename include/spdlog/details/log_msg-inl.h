@@ -36,6 +36,10 @@ SPDLOG_INLINE log_msg::log_msg(spdlog::log_clock::time_point log_time,
       context_field_data(threadlocal_context_head())
 #endif
 {
+#ifdef SPDLOG_NO_STRUCTURED_SPDLOG
+    (void)fields;
+    (void)field_count;
+#endif
 }
 
 SPDLOG_INLINE log_msg::log_msg(spdlog::log_clock::time_point log_time,
