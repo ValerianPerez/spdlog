@@ -37,6 +37,7 @@ SPDLOG_INLINE log_msg::log_msg(spdlog::log_clock::time_point log_time,
 #endif
 {
 #ifdef SPDLOG_NO_STRUCTURED_SPDLOG
+    // Prevent unused argument warning
     (void)fields;
     (void)field_count;
 #endif
