@@ -29,6 +29,7 @@ void replace_default_logger_example();
 void mdc_example();
 
 #include "spdlog/spdlog.h"
+#include "spdlog/json_formatter.h"
 #include "spdlog/cfg/env.h"   // support for loading levels from the environment variable
 #include "spdlog/fmt/ostr.h"  // support for user defined types
 
@@ -51,6 +52,14 @@ int main(int, char *[]) {
         spdlog::debug("This message should not be displayed!");
         spdlog::set_level(spdlog::level::trace);  // Set specific logger's log level
         spdlog::debug("This message should be displayed..");
+
+#ifndef SPDLOG_NO_STRUCTURED_SPDLOG
+        // Structured data
+        spdlog::info({{"field1", "value1"}, {"field2", 2.0}},
+                     "You can output data with fields and values");
+        spdlog::set_formatter(spdlog::details::make_unique<spdlog::json_formatter>());
+        SPDLOG_INFO({{"field1", "value2"}, {"field2", 4.0}}, "JSON logging is good for fields");
+#endif
 
         // Customize msg format for all loggers
         spdlog::set_pattern("[%H:%M:%S %z] [%^%L%$] [thread %t] %v");
@@ -272,11 +281,11 @@ struct my_type {
         : i(i) {}
 };
 
-#ifndef SPDLOG_USE_STD_FORMAT  // when using fmtlib
+namespace fmt_lib = spdlog::fmt_lib;
 template <>
-struct fmt::formatter<my_type> : fmt::formatter<std::string> {
-    auto format(my_type my, format_context &ctx) const -> decltype(ctx.out()) {
-        return fmt::format_to(ctx.out(), "[my_type i={}]", my.i);
+struct fmt_lib::formatter<my_type> : fmt_lib::formatter<std::string> {
+    auto format(my_type my, format_context &ctx) -> decltype(ctx.out()) {
+        return fmt_lib::format_to(ctx.out(), "[my_type i={}]", my.i);
     }
 };
 
@@ -371,8 +380,9 @@ void replace_default_logger_example() {
     // store the old logger so we don't break other examples.
     auto old_logger = spdlog::default_logger();
 
-    auto new_logger = spdlog::basic_logger_mt("new_default_logger", "logs/somelog.txt", true);
-    spdlog::set_default_logger(std::move(new_logger));
+    auto new_logger =
+        spdlog::basic_logger_mt("new_default_logger", "logs/new-default-log.txt", true);
+    spdlog::set_default_logger(new_logger);
     spdlog::set_level(spdlog::level::info);
     spdlog::debug("This message should not be displayed!");
     spdlog::set_level(spdlog::level::trace);

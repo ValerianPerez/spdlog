@@ -17,6 +17,9 @@
 
 #include <spdlog/fmt/fmt.h>
 #include <spdlog/formatter.h>
+#ifndef SPDLOG_NO_STRUCTURED_SPDLOG
+    #include <spdlog/structured_spdlog.h>
+#endif
 
 #include <algorithm>
 #include <array>
@@ -593,6 +596,41 @@ public:
     }
 };
 
+template <typename ScopedPadder>
+class V_formatter final : public flag_formatter {
+public:
+    explicit V_formatter(padding_info padinfo)
+        : flag_formatter(padinfo) {}
+
+    // This is just a starting MVP.  We probably want to be able to
+    //    customize separators, color the key and value separately,
+    //    and lots more expressive things
+    void format(const details::log_msg &msg, const std::tm &, memory_buf_t &dest) override {
+#ifndef SPDLOG_NO_STRUCTURED_SPDLOG
+        // TODO: padding
+        for (size_t i = 0; i < msg.field_data_count; i++) {
+            dest.push_back(' ');
+            Field &field = msg.field_data[i];
+            fmt_helper::append_string_view(field.name, dest);
+            dest.push_back(':');
+            details::append_value(field, dest);
+        }
+
+        if (msg.context_field_data) {
+            for (auto &field : *msg.context_field_data) {
+                dest.push_back(' ');
+                fmt_helper::append_string_view(field.name, dest);
+                dest.push_back(':');
+                details::append_value(field, dest);
+            }
+        }
+#else
+        (void)msg;
+        (void)dest;
+#endif  // SPDLOG_NO_STRUCTURED_SPDLOG
+    }
+};
+
 class ch_formatter final : public flag_formatter {
 public:
     explicit ch_formatter(char ch)
@@ -922,6 +960,17 @@ public:
 #endif
         // fmt_helper::append_string_view(msg.msg(), dest);
         fmt_helper::append_string_view(msg.payload, dest);
+
+        // structured fields
+#ifndef SPDLOG_NO_STRUCTURED_SPDLOG
+        for (size_t i = 0; i < msg.field_data_count; i++) {
+            dest.push_back(' ');
+            Field &field = msg.field_data[i];
+            fmt_helper::append_string_view(field.name, dest);
+            dest.push_back(':');
+            details::append_value(field, dest);
+        }
+#endif
     }
 
 private:
@@ -1046,9 +1095,12 @@ SPDLOG_INLINE void pattern_formatter::handle_flag_(char flag, details::padding_i
             formatters_.push_back(details::make_unique<details::v_formatter<Padder>>(padding));
             break;
 
+        case ('V'):  // the structured fields
+            formatters_.push_back(details::make_unique<details::V_formatter<Padder>>(padding));
+            break;
+
         case ('a'):  // weekday
             formatters_.push_back(details::make_unique<details::a_formatter<Padder>>(padding));
-            need_localtime_ = true;
             break;
 
         case ('A'):  // short weekday

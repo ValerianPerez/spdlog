@@ -75,9 +75,16 @@ public:
     logger &operator=(logger other) SPDLOG_NOEXCEPT;
     void swap(spdlog::logger &other) SPDLOG_NOEXCEPT;
 
+    void log(source_loc loc,
+             level::level_enum lvl,
+             std::initializer_list<Field> fields,
+             string_view_t msg) {
+        log_(loc, lvl, fields.begin(), fields.size(), msg);
+    }
+
     template <typename... Args>
     void log(source_loc loc, level::level_enum lvl, format_string_t<Args...> fmt, Args &&...args) {
-        log_(loc, lvl, details::to_string_view(fmt), std::forward<Args>(args)...);
+        log_(loc, lvl, nullptr, 0, fmt, std::forward<Args>(args)...);
     }
 
     template <typename... Args>
@@ -158,7 +165,7 @@ public:
 #ifdef SPDLOG_WCHAR_TO_UTF8_SUPPORT
     template <typename... Args>
     void log(source_loc loc, level::level_enum lvl, wformat_string_t<Args...> fmt, Args &&...args) {
-        log_(loc, lvl, details::to_string_view(fmt), std::forward<Args>(args)...);
+        log_(loc, lvl, {}, fmt, std::forward<Args>(args)...);
     }
 
     template <typename... Args>
@@ -225,6 +232,42 @@ public:
     template <typename... Args>
     void critical(wformat_string_t<Args...> fmt, Args &&...args) {
         log(level::critical, fmt, std::forward<Args>(args)...);
+    }
+#endif
+
+#ifndef SPDLOG_NO_STRUCTURED_SPDLOG
+    void log(level::level_enum lvl, std::initializer_list<Field> fields, string_view_t msg) {
+        log(source_loc{}, lvl, fields, msg);
+    }
+
+    template <typename T>
+    void trace(std::initializer_list<Field> fields, const T &msg) {
+        log(level::trace, fields, msg);
+    }
+
+    template <typename T>
+    void debug(std::initializer_list<Field> fields, const T &msg) {
+        log(level::debug, fields, msg);
+    }
+
+    template <typename T>
+    void info(std::initializer_list<Field> fields, const T &msg) {
+        log(level::info, fields, msg);
+    }
+
+    template <typename T>
+    void warn(std::initializer_list<Field> fields, const T &msg) {
+        log(level::warn, fields, msg);
+    }
+
+    template <typename T>
+    void error(std::initializer_list<Field> fields, const T &msg) {
+        log(level::err, fields, msg);
+    }
+
+    template <typename T>
+    void critical(std::initializer_list<Field> fields, const T &msg) {
+        log(level::critical, fields, msg);
     }
 #endif
 
@@ -314,7 +357,12 @@ protected:
 
     // common implementation for after templated public api has been resolved
     template <typename... Args>
-    void log_(source_loc loc, level::level_enum lvl, string_view_t fmt, Args &&...args) {
+    void log_(source_loc loc,
+              level::level_enum lvl,
+              const Field *fields,
+              size_t num_fields,
+              string_view_t fmt,
+              Args &&...args) {
         bool log_enabled = should_log(lvl);
         bool traceback_enabled = tracer_.enabled();
         if (!log_enabled && !traceback_enabled) {
@@ -327,8 +375,8 @@ protected:
 #else
             fmt::vformat_to(fmt::appender(buf), fmt, fmt::make_format_args(args...));
 #endif
-
-            details::log_msg log_msg(loc, name_, lvl, string_view_t(buf.data(), buf.size()));
+            details::log_msg log_msg(loc, name_, lvl, string_view_t(buf.data(), buf.size()), fields,
+                                     num_fields);
             log_it_(log_msg, log_enabled, traceback_enabled);
         }
         SPDLOG_LOGGER_CATCH(loc)
