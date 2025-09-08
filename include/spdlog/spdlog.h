@@ -59,6 +59,9 @@ SPDLOG_API void set_formatter(std::unique_ptr<spdlog::formatter> formatter);
 SPDLOG_API void set_pattern(std::string pattern,
                             pattern_time_type time_type = pattern_time_type::local);
 
+// Set global performance log
+SPDLOG_API void set_performance_log(bool enabled_perf);
+
 // enable global backtrace support
 SPDLOG_API void enable_backtrace(size_t n_messages);
 
@@ -188,6 +191,11 @@ inline void critical(format_string_t<Args...> fmt, Args &&...args) {
     default_logger_raw()->critical(fmt, std::forward<Args>(args)...);
 }
 
+template <typename... Args>
+inline void performance(format_string_t<Args...> fmt, Args &&...args) {
+    default_logger_raw()->performance(fmt, std::forward<Args>(args)...);
+}
+
 template <typename T>
 inline void log(source_loc source, level::level_enum lvl, const T &msg) {
     default_logger_raw()->log(source, lvl, msg);
@@ -271,6 +279,11 @@ inline void error(const T &msg) {
 template <typename T>
 inline void critical(const T &msg) {
     default_logger_raw()->critical(msg);
+}
+
+template <typename T>
+inline void performance(const T &msg) {
+    default_logger_raw()->performance(msg);
 }
 
 }  // namespace spdlog

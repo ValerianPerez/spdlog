@@ -154,6 +154,14 @@ SPDLOG_INLINE void registry::set_level(level::level_enum log_level) {
     global_log_level_ = log_level;
 }
 
+SPDLOG_INLINE void registry::set_performance_log(bool enabled_perf) {
+    std::lock_guard<std::mutex> lock(logger_map_mutex_);
+    for (auto &l : loggers_) {
+        l.second->set_performance_log(enabled_perf);
+    }
+    global_enabled_perf_ = enabled_perf;
+}
+
 SPDLOG_INLINE void registry::flush_on(level::level_enum log_level) {
     std::lock_guard<std::mutex> lock(logger_map_mutex_);
     for (auto &l : loggers_) {

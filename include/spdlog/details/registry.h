@@ -62,6 +62,8 @@ public:
 
     void set_level(level::level_enum log_level);
 
+    void set_performance_log(bool enabled_perf);
+
     void flush_on(level::level_enum log_level);
 
     template <typename Rep, typename Period>
@@ -114,6 +116,7 @@ private:
     log_levels log_levels_;
     std::unique_ptr<formatter> formatter_;
     spdlog::level::level_enum global_log_level_ = level::info;
+    bool global_enabled_perf_ = false;
     level::level_enum flush_level_ = level::off;
     err_handler err_handler_;
     std::shared_ptr<thread_pool> tp_;

@@ -170,6 +170,17 @@ TEST_CASE("default logger API", "[default logger]") {
     REQUIRE(oss.str().empty());
     spdlog::drop_all();
     spdlog::set_pattern("%v");
+
+    oss.str("");
+    spdlog::set_level(spdlog::level::perf);
+    spdlog::debug("should not be logged");
+    REQUIRE(oss.str().empty());
+    oss.str("");
+    spdlog::set_performance_log(true);
+    spdlog::perf(std::string("perf log"));
+    REQUIRE(oss.str() == "*** perf log" + std::string(spdlog::details::os::default_eol));
+    spdlog::drop_all();
+    spdlog::set_pattern("%v");
 }
 
 #if (defined(SPDLOG_WCHAR_TO_UTF8_SUPPORT) || defined(SPDLOG_WCHAR_FILENAMES)) && defined(_WIN32)

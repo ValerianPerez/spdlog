@@ -61,6 +61,8 @@ SPDLOG_INLINE void swap(logger &a, logger &b) noexcept { a.swap(b); }
 
 SPDLOG_INLINE void logger::set_level(level::level_enum log_level) { level_.store(log_level); }
 
+SPDLOG_INLINE void logger::set_performance_log(bool enabled_perf) { perf_.store(enabled_perf); }
+
 SPDLOG_INLINE level::level_enum logger::level() const {
     return static_cast<level::level_enum>(level_.load(std::memory_order_relaxed));
 }

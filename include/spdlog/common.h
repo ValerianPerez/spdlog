@@ -226,6 +226,7 @@ struct is_convertible_to_any_format_string
 using level_t = details::null_atomic_int;
 #else
 using level_t = std::atomic<int>;
+using perf_t = std::atomic<bool>;
 #endif
 
 #define SPDLOG_LEVEL_TRACE 0
@@ -234,7 +235,8 @@ using level_t = std::atomic<int>;
 #define SPDLOG_LEVEL_WARN 3
 #define SPDLOG_LEVEL_ERROR 4
 #define SPDLOG_LEVEL_CRITICAL 5
-#define SPDLOG_LEVEL_OFF 6
+#define SPDLOG_LEVEL_PERFORMANCE 6
+#define SPDLOG_LEVEL_OFF 7
 
 #if !defined(SPDLOG_ACTIVE_LEVEL)
     #define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_INFO
@@ -249,6 +251,7 @@ enum level_enum : int {
     warn = SPDLOG_LEVEL_WARN,
     err = SPDLOG_LEVEL_ERROR,
     critical = SPDLOG_LEVEL_CRITICAL,
+    perf = SPDLOG_LEVEL_PERFORMANCE,
     off = SPDLOG_LEVEL_OFF,
     n_levels
 };
@@ -259,21 +262,33 @@ enum level_enum : int {
 #define SPDLOG_LEVEL_NAME_WARNING spdlog::string_view_t("warning", 7)
 #define SPDLOG_LEVEL_NAME_ERROR spdlog::string_view_t("error", 5)
 #define SPDLOG_LEVEL_NAME_CRITICAL spdlog::string_view_t("critical", 8)
+#define SPDLOG_LEVEL_NAME_PERFORMANCE spdlog::string_view_t("performance", 11)
 #define SPDLOG_LEVEL_NAME_OFF spdlog::string_view_t("off", 3)
 
 #if !defined(SPDLOG_LEVEL_NAMES)
-    #define SPDLOG_LEVEL_NAMES                                                                  \
-        {                                                                                       \
-            SPDLOG_LEVEL_NAME_TRACE, SPDLOG_LEVEL_NAME_DEBUG, SPDLOG_LEVEL_NAME_INFO,           \
-                SPDLOG_LEVEL_NAME_WARNING, SPDLOG_LEVEL_NAME_ERROR, SPDLOG_LEVEL_NAME_CRITICAL, \
-                SPDLOG_LEVEL_NAME_OFF                                                           \
+    #define SPDLOG_LEVEL_NAMES                             \
+        {                                                  \
+            SPDLOG_LEVEL_NAME_TRACE,                       \
+            SPDLOG_LEVEL_NAME_DEBUG,                       \
+            SPDLOG_LEVEL_NAME_INFO,                        \
+            SPDLOG_LEVEL_NAME_WARNING,                     \
+            SPDLOG_LEVEL_NAME_ERROR,                       \
+            SPDLOG_LEVEL_NAME_CRITICAL,                    \
+            SPDLOG_LEVEL_NAME_OFF SPDLOG_LEVEL_NAME_TRACE, \
+            SPDLOG_LEVEL_NAME_DEBUG,                       \
+            SPDLOG_LEVEL_NAME_INFO,                        \
+            SPDLOG_LEVEL_NAME_WARNING,                     \
+            SPDLOG_LEVEL_NAME_ERROR,                       \
+            SPDLOG_LEVEL_NAME_CRITICAL,                    \
+            SPDLOG_LEVEL_NAME_PERFORMANCE,                 \
+            SPDLOG_LEVEL_NAME_OFF,                         \
         }
+
 #endif
 
 #if !defined(SPDLOG_SHORT_LEVEL_NAMES)
 
-    #define SPDLOG_SHORT_LEVEL_NAMES \
-        { "T", "D", "I", "W", "E", "C", "O" }
+    #define SPDLOG_SHORT_LEVEL_NAMES {"T", "D", "I", "W", "E", "C", "P", "O"}
 #endif
 
 SPDLOG_API const string_view_t &to_string_view(spdlog::level::level_enum l) SPDLOG_NOEXCEPT;

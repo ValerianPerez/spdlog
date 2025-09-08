@@ -155,6 +155,11 @@ public:
         log(level::critical, fmt, std::forward<Args>(args)...);
     }
 
+    template <typename... Args>
+    void performance(format_string_t<Args...> fmt, Args &&...args) {
+        log(level::perf, fmt, std::forward<Args>(args)...);
+    }
+
 #ifdef SPDLOG_WCHAR_TO_UTF8_SUPPORT
     template <typename... Args>
     void log(source_loc loc, level::level_enum lvl, wformat_string_t<Args...> fmt, Args &&...args) {
@@ -258,15 +263,23 @@ public:
         log(level::critical, msg);
     }
 
+    template <typename T>
+    void performance(const T &msg) {
+        log(level::perf, msg);
+    }
+
     // return true logging is enabled for the given level.
     bool should_log(level::level_enum msg_level) const {
-        return msg_level >= level_.load(std::memory_order_relaxed);
+        return msg_level >= level_.load(std::memory_order_relaxed) ||
+               msg_level == level::level_enum::perf && perf_.load(std::memory_order_relaxed);
     }
 
     // return true if backtrace logging is enabled.
     bool should_backtrace() const { return tracer_.enabled(); }
 
     void set_level(level::level_enum log_level);
+
+    void set_performance_log(bool enabled_perf);
 
     level::level_enum level() const;
 
@@ -309,6 +322,7 @@ protected:
     std::vector<sink_ptr> sinks_;
     spdlog::level_t level_{level::info};
     spdlog::level_t flush_level_{level::off};
+    spdlog::perf_t perf_{false};
     err_handler custom_err_handler_{nullptr};
     details::backtracer tracer_;
 
